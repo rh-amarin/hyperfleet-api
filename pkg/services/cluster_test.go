@@ -675,7 +675,7 @@ func TestClusterAvailableReadyTransitions(t *testing.T) {
 		var available, ready *api.ResourceCondition
 		for i := range conds {
 			switch conds[i].Type {
-			case api.ConditionTypeAvailable:
+			case api.ConditionTypeLastKnownReconciled:
 				available = &conds[i]
 			case api.ConditionTypeReady:
 				ready = &conds[i]
@@ -825,11 +825,11 @@ func TestClusterStaleAdapterStatusUpdatePolicy(t *testing.T) {
 		var conds []api.ResourceCondition
 		g.Expect(json.Unmarshal(stored.StatusConditions, &conds)).To(Succeed())
 		for i := range conds {
-			if conds[i].Type == api.ConditionTypeAvailable {
+			if conds[i].Type == api.ConditionTypeLastKnownReconciled {
 				return conds[i]
 			}
 		}
-		g.Expect(true).To(BeFalse(), "Available condition not found")
+		g.Expect(true).To(BeFalse(), "LastKnownReconciled condition not found")
 		return api.ResourceCondition{}
 	}
 
@@ -894,7 +894,7 @@ func TestClusterSyntheticTimestampsStableWithoutAdapterStatus(t *testing.T) {
 	fixedNow := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
 	initialConditions := []api.ResourceCondition{
 		{
-			Type:               api.ConditionTypeAvailable,
+			Type:               api.ConditionTypeLastKnownReconciled,
 			Status:             api.ConditionFalse,
 			ObservedGeneration: 1,
 			LastTransitionTime: fixedNow,
@@ -929,7 +929,7 @@ func TestClusterSyntheticTimestampsStableWithoutAdapterStatus(t *testing.T) {
 	var createdAvailable, createdReady *api.ResourceCondition
 	for i := range createdConds {
 		switch createdConds[i].Type {
-		case api.ConditionTypeAvailable:
+		case api.ConditionTypeLastKnownReconciled:
 			createdAvailable = &createdConds[i]
 		case api.ConditionTypeReady:
 			createdReady = &createdConds[i]
@@ -954,7 +954,7 @@ func TestClusterSyntheticTimestampsStableWithoutAdapterStatus(t *testing.T) {
 	var updatedAvailable, updatedReady *api.ResourceCondition
 	for i := range updatedConds {
 		switch updatedConds[i].Type {
-		case api.ConditionTypeAvailable:
+		case api.ConditionTypeLastKnownReconciled:
 			updatedAvailable = &updatedConds[i]
 		case api.ConditionTypeReady:
 			updatedReady = &updatedConds[i]

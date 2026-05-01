@@ -60,12 +60,12 @@ func mkPrevReady(
 	}
 }
 
-// mkPrevAvail builds an Available ResourceCondition for use as a prev fixture.
+// mkPrevAvail builds a LastKnownReconciled ResourceCondition for use as a prev fixture.
 func mkPrevAvail(
 	status api.ResourceConditionStatus, obsGen int32, lastTransition, lastUpdated time.Time,
 ) *api.ResourceCondition {
 	return &api.ResourceCondition{
-		Type:               api.ConditionTypeAvailable,
+		Type:               api.ConditionTypeLastKnownReconciled,
 		Status:             status,
 		ObservedGeneration: obsGen,
 		LastTransitionTime: lastTransition,
@@ -90,7 +90,7 @@ func TestParsePrevConditions(t *testing.T) {
 		return b
 	}
 	readyCond := api.ResourceCondition{Type: api.ConditionTypeReady, Status: api.ConditionTrue}
-	availCond := api.ResourceCondition{Type: api.ConditionTypeAvailable, Status: api.ConditionFalse}
+	availCond := api.ResourceCondition{Type: api.ConditionTypeLastKnownReconciled, Status: api.ConditionFalse}
 	adapterCond := api.ResourceCondition{Type: "Adapter1Successful", Status: api.ConditionTrue}
 
 	t.Run("nil input", func(t *testing.T) {
@@ -123,8 +123,8 @@ func TestParsePrevConditions(t *testing.T) {
 		if r == nil || r.Type != api.ConditionTypeReady {
 			t.Fatalf("expected Ready condition, got %v", r)
 		}
-		if a == nil || a.Type != api.ConditionTypeAvailable {
-			t.Fatalf("expected Available condition, got %v", a)
+		if a == nil || a.Type != api.ConditionTypeLastKnownReconciled {
+			t.Fatalf("expected LastKnownReconciled condition, got %v", a)
 		}
 	})
 
@@ -145,8 +145,8 @@ func TestParsePrevConditions(t *testing.T) {
 		if r != nil {
 			t.Fatalf("expected nil Ready, got %v", r)
 		}
-		if a == nil || a.Type != api.ConditionTypeAvailable {
-			t.Fatalf("expected Available, got %v", a)
+		if a == nil || a.Type != api.ConditionTypeLastKnownReconciled {
+			t.Fatalf("expected LastKnownReconciled, got %v", a)
 		}
 	})
 
@@ -1020,7 +1020,7 @@ func TestAggregateResourceStatus(t *testing.T) {
 		required := []string{"a", "b"}
 		prevConds := encodePrev(
 			api.ResourceCondition{
-				Type: api.ConditionTypeAvailable, Status: api.ConditionTrue, ObservedGeneration: 1,
+				Type: api.ConditionTypeLastKnownReconciled, Status: api.ConditionTrue, ObservedGeneration: 1,
 				CreatedTime: aggT0, LastUpdatedTime: aggT0, LastTransitionTime: aggT0,
 			},
 		)
@@ -1073,7 +1073,7 @@ func TestAggregateResourceStatus(t *testing.T) {
 		required := []string{"a", "b"}
 		prevConds := encodePrev(
 			api.ResourceCondition{
-				Type: api.ConditionTypeAvailable, Status: api.ConditionTrue, ObservedGeneration: 1,
+				Type: api.ConditionTypeLastKnownReconciled, Status: api.ConditionTrue, ObservedGeneration: 1,
 				CreatedTime: aggT0, LastUpdatedTime: aggT0, LastTransitionTime: aggT0,
 			},
 		)
@@ -1100,8 +1100,8 @@ func TestAggregateResourceStatus(t *testing.T) {
 		if ready.Type != api.ConditionTypeReady {
 			t.Errorf("ready.Type=%q, want %q", ready.Type, api.ConditionTypeReady)
 		}
-		if avail.Type != api.ConditionTypeAvailable {
-			t.Errorf("avail.Type=%q, want %q", avail.Type, api.ConditionTypeAvailable)
+		if avail.Type != api.ConditionTypeLastKnownReconciled {
+			t.Errorf("avail.Type=%q, want %q", avail.Type, api.ConditionTypeLastKnownReconciled)
 		}
 	})
 
