@@ -179,10 +179,10 @@ paths:
                       created_time: '2021-01-01T10:00:00Z'
                       last_updated_time: '2021-01-01T10:00:00Z'
                       last_transition_time: '2021-01-01T10:00:00Z'
-                    - type: Available
+                    - type: LastKnownReconciled
                       status: 'True'
-                      reason: All adapters reported Available True for the same generation
-                      message: All adapters reported Available True for the same generation
+                      reason: All required adapters report LastKnownReconciled=True for the tracked generation
+                      message: All required adapters report LastKnownReconciled=True for the tracked generation
                       observed_generation: 1
                       created_time: '2021-01-01T10:00:00Z'
                       last_updated_time: '2021-01-01T10:00:00Z'
@@ -374,10 +374,10 @@ paths:
                       created_time: '2021-01-01T10:00:00Z'
                       last_updated_time: '2021-01-01T10:00:00Z'
                       last_transition_time: '2021-01-01T10:00:00Z'
-                    - type: Available
+                    - type: LastKnownReconciled
                       status: 'True'
-                      reason: All adapters reported Available True for the same generation
-                      message: All adapters reported Available True for the same generation
+                      reason: All required adapters report LastKnownReconciled=True for the tracked generation
+                      message: All required adapters report LastKnownReconciled=True for the tracked generation
                       observed_generation: 1
                       created_time: '2021-01-01T10:00:00Z'
                       last_updated_time: '2021-01-01T10:00:00Z'
@@ -1036,10 +1036,10 @@ components:
               created_time: '2021-01-01T10:00:00Z'
               last_updated_time: '2021-01-01T10:00:00Z'
               last_transition_time: '2021-01-01T10:00:00Z'
-            - type: Available
+            - type: LastKnownReconciled
               status: 'True'
-              reason: All adapters reported Available True for the same generation
-              message: All adapters reported Available True for the same generation
+              reason: All required adapters report LastKnownReconciled=True for the tracked generation
+              message: All required adapters report LastKnownReconciled=True for the tracked generation
               observed_generation: 1
               created_time: '2021-01-01T10:00:00Z'
               last_updated_time: '2021-01-01T10:00:00Z'
@@ -1159,7 +1159,7 @@ components:
 
             **Mandatory conditions**: 
             - `type: "Ready"`: Whether all adapters report successfully at the current generation.
-            - `type: "Available"`: Aggregated adapter result for a common observed_generation.   
+            - `type: "LastKnownReconciled"`: Aggregated adapter result for a common observed_generation; sticky across generations.
 
             These conditions are present immediately upon resource creation.
       description: |-
@@ -1326,10 +1326,10 @@ components:
               created_time: '2021-01-01T10:00:00Z'
               last_updated_time: '2021-01-01T10:00:00Z'
               last_transition_time: '2021-01-01T10:00:00Z'
-            - type: Available
+            - type: LastKnownReconciled
               status: 'True'
-              reason: All adapters reported Available True for the same generation
-              message: All adapters reported Available True for the same generation
+              reason: All required adapters report LastKnownReconciled=True for the tracked generation
+              message: All required adapters report LastKnownReconciled=True for the tracked generation
               observed_generation: 1
               created_time: '2021-01-01T10:00:00Z'
               last_updated_time: '2021-01-01T10:00:00Z'
@@ -1516,7 +1516,7 @@ components:
 
             **Mandatory conditions**: 
             - `type: "Ready"`: Whether all adapters report successfully at the current generation.
-            - `type: "Available"`: Aggregated adapter result for a common observed_generation.   
+            - `type: "LastKnownReconciled"`: Aggregated adapter result for a common observed_generation; sticky across generations.
 
             These conditions are present immediately upon resource creation.
       description: |-

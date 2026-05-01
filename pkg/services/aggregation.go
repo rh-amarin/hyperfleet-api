@@ -144,7 +144,7 @@ func parsePrevConditions(ctx context.Context, raw []byte) (
 		switch c.Type {
 		case api.ConditionTypeReady:
 			prevReady = &c
-		case api.ConditionTypeAvailable:
+		case api.ConditionTypeLastKnownReconciled:
 			prevAvail = &c
 		default:
 			prevAdapterByType[c.Type] = &c
@@ -420,7 +420,7 @@ func computeAvailable(
 	}
 
 	return api.ResourceCondition{
-		Type:               api.ConditionTypeAvailable,
+		Type:               api.ConditionTypeLastKnownReconciled,
 		Status:             status,
 		ObservedGeneration: obsGen,
 		Reason:             strPtr(reason),
