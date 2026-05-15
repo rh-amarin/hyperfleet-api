@@ -61,6 +61,12 @@ config:
     acl:
       file: ""
 
+    # Path to partner-specific OpenAPI schema for spec validation.
+    # When set, the API exits on startup if the file is missing or invalid (fail-fast).
+    # Leave empty to disable schema validation.
+    # Tip: use partnerSchema below to mount the schema automatically.
+    openapi_schema_path: ""
+
   # Database configuration
   database:
     dialect: postgres
@@ -144,6 +150,41 @@ config:
     required:
       cluster: []  # Example: [validation, dns, pullsecret, hypershift]
       nodepool: []  # Example: [validation, hypershift]
+
+# ============================================================
+# Partner Schema
+# ============================================================
+# Supply a partner-specific OpenAPI schema for spec validation.
+# When enabled, the schema is mounted into the container and
+# server.openapi_schema_path is set automatically.
+#
+# Option A — inline schema (Helm manages the ConfigMap):
+#   partnerSchema:
+#     enabled: true
+#     content: |
+#       openapi: 3.0.0
+#       ...
+#
+# Option B — pre-existing ConfigMap (you manage it):
+#   partnerSchema:
+#     enabled: true
+#     existingConfigMap: my-partner-schema
+#     existingConfigMapKey: schema.yaml
+# ============================================================
+partnerSchema:
+  enabled: false
+
+  # Raw OpenAPI schema YAML/JSON. Helm creates a ConfigMap from this.
+  # Mutually exclusive with existingConfigMap.
+  content: ""
+
+  # Reference an existing ConfigMap that contains the schema.
+  # Mutually exclusive with content.
+  existingConfigMap: ""
+  existingConfigMapKey: "schema.yaml"
+
+  # Container path where the schema file is mounted.
+  mountPath: /etc/hyperfleet/partner-schema.yaml
 
 # ============================================================
 # Kubernetes Resources

@@ -38,6 +38,12 @@ data:
       acl:
         file: {{ .Values.config.server.acl.file | quote }}
 
+      {{- $schemaPath := .Values.config.server.openapi_schema_path }}
+      {{- if and .Values.partnerSchema.enabled (eq $schemaPath "") }}
+        {{- $schemaPath = .Values.partnerSchema.mountPath }}
+      {{- end }}
+      openapi_schema_path: {{ $schemaPath | quote }}
+
     database:
       dialect: {{ .Values.config.database.dialect }}
 

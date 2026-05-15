@@ -141,12 +141,70 @@ HyperFleet API is configured via environment variables and configuration files.
 
 </details>
 
-### Schema Validation
+### Partner Schema Validation
 
-The API validates cluster and nodepool `spec` fields against an OpenAPI schema. This allows different providers (GCP, AWS, Azure) to have different spec structures.
+The API validates cluster and nodepool `spec` fields against a partner-specific OpenAPI schema. This is how different providers (GCP, AWS, Azure) enforce their own spec structures before data enters the database.
 
-- **Configuration:** `server.openapi_schema_path` (supports config file, env var, or CLI flag)
-- **Default:** `openapi/openapi.yaml` (provider-agnostic base schema)
+**Fail-fast guarantee:** If `server.openapi_schema_path` is set to a non-empty path and the file is missing or invalid, **the API exits immediately on startup** rather than silently disabling validation. This prevents misconfigured deployments from accepting bad specs that only fail later in the pipeline (e.g., in Sentinel or adapters).
+
+| Setting | Value |
+|---------|-------|
+| Config key | `server.openapi_schema_path` |
+| Environment variable | `HYPERFLEET_SERVER_OPENAPI_SCHEMA_PATH` |
+| CLI flag | `--server-openapi-schema-path` |
+| Default | `""` (empty — schema validation disabled) |
+
+**Supplying a schema in Kubernetes (Helm):**
+
+Option A — inline schema (Helm creates the ConfigMap):
+```yaml
+partnerSchema:
+  enabled: true
+  content: |
+    openapi: 3.0.0
+    info:
+      title: My Partner Schema
+      version: 1.0.0
+    paths: {}
+    components:
+      schemas:
+        ClusterSpec:
+          type: object
+          required: [region, provider]
+          properties:
+            region: {type: string}
+            provider: {type: string, enum: [gcp, aws]}
+        NodePoolSpec:
+          type: object
+          required: [machine_type]
+          properties:
+            machine_type: {type: string}
+```
+
+Option B — pre-existing ConfigMap (you manage it):
+```bash
+kubectl create configmap my-partner-schema \
+  --from-file=schema.yaml=/path/to/partner-schema.yaml \
+  --namespace hyperfleet-system
+```
+```yaml
+partnerSchema:
+  enabled: true
+  existingConfigMap: my-partner-schema
+  existingConfigMapKey: schema.yaml
+```
+
+When `partnerSchema.enabled=true`, Helm automatically:
+- Mounts the schema at `/etc/hyperfleet/partner-schema.yaml`
+- Sets `server.openapi_schema_path` in the generated ConfigMap
+
+**Local development:**
+```bash
+hyperfleet-api serve --server-openapi-schema-path=openapi/openapi.yaml
+# or:
+export HYPERFLEET_SERVER_OPENAPI_SCHEMA_PATH=openapi/openapi.yaml
+hyperfleet-api serve
+```
 
 See [Configuration Guide](config.md) for all configuration options.
 
@@ -285,6 +343,10 @@ helm uninstall hyperfleet-api --namespace hyperfleet-system
 | `image.pullPolicy` | Image pull policy | `Always` |
 | `config.adapters.required.cluster` | Cluster adapters required for Ready state | `[]` |
 | `config.adapters.required.nodepool` | Nodepool adapters required for Ready state | `[]` |
+| `config.server.openapi_schema_path` | Path to partner OpenAPI schema (fail-fast if set but missing) | `""` |
+| `partnerSchema.enabled` | Mount and configure partner schema automatically | `false` |
+| `partnerSchema.content` | Inline schema YAML (Helm creates ConfigMap) | `""` |
+| `partnerSchema.existingConfigMap` | Use a pre-existing ConfigMap for the schema | `""` |
 | `config.server.jwt.enabled` | Enable JWT authentication | `true` |
 | `database.postgresql.enabled` | Enable built-in PostgreSQL | `true` |
 | `database.external.enabled` | Use external database | `false` |

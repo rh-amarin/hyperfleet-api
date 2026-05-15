@@ -258,6 +258,7 @@ HTTP server settings for the API endpoint.
 | `server.jwk.cert_file` | string | `""` | JWK certificate file path (optional) |
 | `server.jwk.cert_url` | string | `https://sso.redhat.com/...` | JWK certificate URL |
 | `server.acl.file` | string | `""` | Access control list (ACL) file path |
+| `server.openapi_schema_path` | string | `""` | Path to partner OpenAPI schema for spec validation. **Fail-fast**: the API exits on startup if set to a non-empty path that is missing or invalid. Leave empty to disable schema validation. |
 
 **Example:**
 ```yaml
@@ -373,6 +374,7 @@ Complete table of all configuration properties, their environment variables, and
 | `server.jwk.cert_file` | `HYPERFLEET_SERVER_JWK_CERT_FILE` | string | `""` |
 | `server.jwk.cert_url` | `HYPERFLEET_SERVER_JWK_CERT_URL` | string | `https://sso.redhat.com/...` |
 | `server.acl.file` | `HYPERFLEET_SERVER_ACL_FILE` | string | `""` |
+| `server.openapi_schema_path` | `HYPERFLEET_SERVER_OPENAPI_SCHEMA_PATH` | string | `""` |
 | **Database** | | | |
 | `database.dialect` | `HYPERFLEET_DATABASE_DIALECT` | string | `postgres` |
 | `database.host` | `HYPERFLEET_DATABASE_HOST` | string | `localhost` |
@@ -441,6 +443,7 @@ All CLI flags and their corresponding configuration paths.
 | `--server-jwk-cert-file` | `server.jwk.cert_file` | string |
 | `--server-jwk-cert-url` | `server.jwk.cert_url` | string |
 | `--server-acl-file` | `server.acl.file` | string |
+| `--server-openapi-schema-path` | `server.openapi_schema_path` | string |
 | **Database** | | |
 | `--db-dialect` | `database.dialect` | string |
 | `--db-host` | `database.host` | string |

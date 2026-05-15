@@ -120,24 +120,10 @@ func registerAPIMiddleware(router *mux.Router) {
 	// Load schema path from config (follows Flag > Env > Config File > Default priority)
 	schemaPath := env().Config.Server.OpenAPISchemaPath
 
-	// Initialize schema validator (non-blocking - will warn if schema not found)
-	// Use background context for initialization logging
-	ctx := context.Background()
-
-	schemaValidator, err := validators.NewSchemaValidator(schemaPath)
-	if err != nil {
-		// Log warning but don't fail - schema validation is optional
-		logger.With(ctx, logger.FieldSchemaPath, schemaPath).WithError(err).Warn("Failed to load schema validator")
-		logger.Warn(ctx, "Schema validation is disabled. Spec fields will not be validated.")
-		logger.Info(ctx, "To enable schema validation:")
-		logger.Info(ctx, "  - Local: Run from repo root, or use --server-openapi-schema-path=openapi/openapi.yaml")
-		logger.Info(ctx, "  - Config file: server.openapi_schema_path")
-		logger.Info(ctx, "  - Environment: HYPERFLEET_SERVER_OPENAPI_SCHEMA_PATH")
-	} else {
-		// Apply schema validation middleware
-		logger.With(ctx, logger.FieldSchemaPath, schemaPath).Info("Schema validation enabled")
-		router.Use(middleware.SchemaValidationMiddleware(schemaValidator))
-	}
+	err := applySchemaValidation(router, schemaPath)
+	// Fail fast: a configured schema path must resolve to a valid schema.
+	// Silently disabling validation would allow invalid specs into the database.
+	check(err, fmt.Sprintf("Failed to load partner schema from %q — fix the path or unset server.openapi_schema_path", schemaPath))
 
 	router.Use(
 		func(next http.Handler) http.Handler {
@@ -146,4 +132,24 @@ func registerAPIMiddleware(router *mux.Router) {
 	)
 
 	router.Use(gorillahandlers.CompressHandler)
+}
+
+// applySchemaValidation loads the partner schema and registers SchemaValidationMiddleware on router.
+// If schemaPath is empty, schema validation is disabled (no-op). If schemaPath is set but the
+// file is missing or invalid, an error is returned so the caller can fail fast.
+func applySchemaValidation(router *mux.Router, schemaPath string) error {
+	ctx := context.Background()
+	if schemaPath == "" {
+		logger.Info(ctx, "Schema validation disabled (no partner schema path configured).")
+		return nil
+	}
+
+	schemaValidator, err := validators.NewSchemaValidator(schemaPath)
+	if err != nil {
+		return err
+	}
+
+	logger.With(ctx, logger.FieldSchemaPath, schemaPath).Info("Schema validation enabled")
+	router.Use(middleware.SchemaValidationMiddleware(schemaValidator))
+	return nil
 }
