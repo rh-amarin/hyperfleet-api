@@ -630,7 +630,7 @@ func (s *sqlResourceService) recomputeAndSaveResourceConditions(
 			RefTime:            refTime,
 			DeletedTime:        resource.DeletedTime,
 			PrevConditionsJSON: prevConditionsJSON,
-			RequiredAdapters:   desc.RequiredAdapters,
+			RequiredAdapters:   desc.RequiredAdapterNames(),
 			AdapterStatuses:    adapterStatuses,
 			HasChildResources:  hasChildResources,
 		},
@@ -686,7 +686,7 @@ func (s *sqlResourceService) tryHardDeleteResource(
 	// Check that ALL required adapters (not just this one) have reported
 	// Finalized=True at the current generation.
 	desc := registry.MustGet(resource.Kind)
-	if !allAdaptersFinalized(desc.RequiredAdapters, allStatuses, resource.Generation) {
+	if !allAdaptersFinalized(desc.RequiredAdapterNames(), allStatuses, resource.Generation) {
 		return false, nil
 	}
 

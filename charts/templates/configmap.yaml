@@ -138,6 +138,13 @@ data:
 
       shutdown_timeout: {{ .Values.config.health.shutdown_timeout }}
       db_ping_timeout: {{ .Values.config.health.db_ping_timeout }}
+{{- if .Values.config.reconciler }}
+    reconciler:
+      enabled: {{ .Values.config.reconciler.enabled }}
+      poll_interval: {{ .Values.config.reconciler.poll_interval }}
+      stale_threshold: {{ .Values.config.reconciler.stale_threshold }}
+      http_timeout: {{ .Values.config.reconciler.http_timeout }}
+{{- end }}
     # NOTE: When EntityDescriptor gains many more fields, consider replacing
     # the explicit range below with: .Values.config.entities | toYaml | indent 6
 {{- if .Values.config.entities }}
@@ -154,8 +161,8 @@ data:
         spec_schema_name: {{ .spec_schema_name }}
 {{- if .required_adapters }}
         required_adapters:
-{{- range .required_adapters }}
-          - {{ . }}
+{{- range $name, $url := .required_adapters }}
+          {{ $name }}: {{ $url }}
 {{- end }}
 {{- end }}
 {{- if .name_min_len }}

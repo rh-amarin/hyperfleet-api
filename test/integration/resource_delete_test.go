@@ -22,7 +22,7 @@ func TestResourceDelete_ParentChildWithRequiredAdapters(t *testing.T) {
 
 		// Temporarily add RequiredAdapters to Version for this test
 		registry.UpdateDescriptor("Version", func(d *registry.EntityDescriptor) {
-			d.RequiredAdapters = []string{"test-adapter"}
+			d.RequiredAdapters = map[string]string{"test-adapter": "http://test-adapter.default.svc.cluster.local"}
 		})
 		t.Cleanup(func() {
 			registry.UpdateDescriptor("Version", func(d *registry.EntityDescriptor) {
@@ -177,7 +177,7 @@ func TestExistsSoftDeletedByOwner(t *testing.T) {
 		svc, h := setupResourceTest(t)
 
 		registry.UpdateDescriptor("Version", func(d *registry.EntityDescriptor) {
-			d.RequiredAdapters = []string{"test-adapter"}
+			d.RequiredAdapters = map[string]string{"test-adapter": "http://test-adapter.default.svc.cluster.local"}
 		})
 		t.Cleanup(func() {
 			registry.UpdateDescriptor("Version", func(d *registry.EntityDescriptor) {

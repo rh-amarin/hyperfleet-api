@@ -833,7 +833,7 @@ func setupManagedDescriptor() {
 	registry.Register(registry.EntityDescriptor{
 		Kind:             "Managed",
 		Plural:           "manageds",
-		RequiredAdapters: []string{"provisioner"},
+		RequiredAdapters: map[string]string{"provisioner": "http://provisioner.default.svc.cluster.local"},
 	})
 }
 
@@ -1323,7 +1323,7 @@ func setupDescriptorsWithRequiredAdapters() {
 		Plural:           "versions",
 		ParentKind:       "Channel",
 		OnParentDelete:   registry.OnParentDeleteRestrict,
-		RequiredAdapters: []string{"adapter1"}, // Version needs adapter finalization
+		RequiredAdapters: map[string]string{"adapter1": "http://adapter1.default.svc.cluster.local"}, // Version needs adapter finalization
 	})
 }
 
@@ -1338,7 +1338,7 @@ func setupDescriptorsWithCascadeAndRequiredAdapters() {
 		Plural:           "tasks",
 		ParentKind:       "Workspace",
 		OnParentDelete:   registry.OnParentDeleteCascade,
-		RequiredAdapters: []string{"adapter1"},
+		RequiredAdapters: map[string]string{"adapter1": "http://adapter1.default.svc.cluster.local"},
 	})
 }
 
@@ -1687,7 +1687,7 @@ func TestResourceService_ForceDelete_ChildWithRequiredAdapters_Succeeds(t *testi
 	registry.Register(registry.EntityDescriptor{
 		Kind: "ManagedChild", Plural: "managedchildren", ParentKind: "Parent",
 		OnParentDelete:   registry.OnParentDeleteCascade,
-		RequiredAdapters: []string{"provisioner"},
+		RequiredAdapters: map[string]string{"provisioner": "http://provisioner.default.svc.cluster.local"},
 	})
 
 	mockDao := newMockResourceDao()
@@ -1729,7 +1729,7 @@ func setupAdapterStatusDescriptors() {
 	registry.Register(registry.EntityDescriptor{
 		Kind:             "TestResource",
 		Plural:           "testresources",
-		RequiredAdapters: []string{"adapter1"},
+		RequiredAdapters: map[string]string{"adapter1": "http://adapter1.default.svc.cluster.local"},
 	})
 }
 
@@ -1952,14 +1952,14 @@ func TestProcessAdapterStatus_SoftDeleted_ChildrenExist_NoHardDelete(t *testing.
 	registry.Register(registry.EntityDescriptor{
 		Kind:             "Parent",
 		Plural:           "parents",
-		RequiredAdapters: []string{"adapter1"},
+		RequiredAdapters: map[string]string{"adapter1": "http://adapter1.default.svc.cluster.local"},
 	})
 	registry.Register(registry.EntityDescriptor{
 		Kind:             "Child",
 		Plural:           "children",
 		ParentKind:       "Parent",
 		OnParentDelete:   registry.OnParentDeleteCascade,
-		RequiredAdapters: []string{"child-adapter"},
+		RequiredAdapters: map[string]string{"child-adapter": "http://child-adapter.default.svc.cluster.local"},
 	})
 
 	mockDao := newMockResourceDao()
@@ -2294,7 +2294,7 @@ func TestResourceService_AvailableReconciledTransitions(t *testing.T) {
 	registry.Register(registry.EntityDescriptor{
 		Kind:             "StateMachine",
 		Plural:           "statemachines",
-		RequiredAdapters: []string{"adapter-a", "adapter-b"},
+		RequiredAdapters: map[string]string{"adapter-a": "http://adapter-a.default.svc.cluster.local", "adapter-b": "http://adapter-b.default.svc.cluster.local"},
 	})
 
 	mockDao := newMockResourceDao()
@@ -2396,7 +2396,7 @@ func TestResourceService_SyntheticTimestampsStable(t *testing.T) {
 	registry.Register(registry.EntityDescriptor{
 		Kind:             "Stable",
 		Plural:           "stables",
-		RequiredAdapters: []string{"adapter1"},
+		RequiredAdapters: map[string]string{"adapter1": "http://adapter1.default.svc.cluster.local"},
 	})
 
 	mockDao := newMockResourceDao()
@@ -2459,14 +2459,14 @@ func TestResourceService_ReconciledDuringDeletion_ChildrenReason(t *testing.T) {
 	registry.Register(registry.EntityDescriptor{
 		Kind:             "Parent",
 		Plural:           "parents",
-		RequiredAdapters: []string{"adapter1"},
+		RequiredAdapters: map[string]string{"adapter1": "http://adapter1.default.svc.cluster.local"},
 	})
 	registry.Register(registry.EntityDescriptor{
 		Kind:             "Child",
 		Plural:           "children",
 		ParentKind:       "Parent",
 		OnParentDelete:   registry.OnParentDeleteCascade,
-		RequiredAdapters: []string{"child-adapter"},
+		RequiredAdapters: map[string]string{"child-adapter": "http://child-adapter.default.svc.cluster.local"},
 	})
 
 	mockDao := newMockResourceDao()
@@ -2602,14 +2602,14 @@ func TestResourceService_Delete_CascadeSoftDeleteSetsMetadataOnChildren(t *testi
 	registry.Register(registry.EntityDescriptor{
 		Kind:             "Cluster",
 		Plural:           "clusters",
-		RequiredAdapters: []string{"provisioner"},
+		RequiredAdapters: map[string]string{"provisioner": "http://provisioner.default.svc.cluster.local"},
 	})
 	registry.Register(registry.EntityDescriptor{
 		Kind:             "NodePool",
 		Plural:           "nodepools",
 		ParentKind:       "Cluster",
 		OnParentDelete:   registry.OnParentDeleteCascade,
-		RequiredAdapters: []string{"np-provisioner"},
+		RequiredAdapters: map[string]string{"np-provisioner": "http://np-provisioner.default.svc.cluster.local"},
 	})
 
 	mockDao := newMockResourceDao()
@@ -2650,7 +2650,7 @@ func TestResourceService_Delete_SoftDelete_ReconciledFlipsToFalse(t *testing.T) 
 	registry.Register(registry.EntityDescriptor{
 		Kind:             "Cluster",
 		Plural:           "clusters",
-		RequiredAdapters: []string{"adapter1"},
+		RequiredAdapters: map[string]string{"adapter1": "http://adapter1.default.svc.cluster.local"},
 	})
 
 	mockDao := newMockResourceDao()
@@ -2712,7 +2712,7 @@ func TestResourceService_StaleAdapterStatusUpdatePolicy(t *testing.T) {
 	registry.Register(registry.EntityDescriptor{
 		Kind:             "Cluster",
 		Plural:           "clusters",
-		RequiredAdapters: []string{"adapter-a", "adapter-b"},
+		RequiredAdapters: map[string]string{"adapter-a": "http://adapter-a.default.svc.cluster.local", "adapter-b": "http://adapter-b.default.svc.cluster.local"},
 	})
 
 	mockDao := newMockResourceDao()
@@ -2860,7 +2860,7 @@ func TestResourceService_Patch_ReconciledFlipsToFalse(t *testing.T) {
 	registry.Register(registry.EntityDescriptor{
 		Kind:             "TestEntity",
 		Plural:           "testentities",
-		RequiredAdapters: []string{"adapter-a"},
+		RequiredAdapters: map[string]string{"adapter-a": "http://adapter-a.default.svc.cluster.local"},
 	})
 
 	mockDao := newMockResourceDao()
@@ -2913,7 +2913,7 @@ func TestResourceService_Patch_ConsecutivePatchKeepsReconciledFalse(t *testing.T
 	registry.Register(registry.EntityDescriptor{
 		Kind:             "TestEntity",
 		Plural:           "testentities",
-		RequiredAdapters: []string{"adapter-a"},
+		RequiredAdapters: map[string]string{"adapter-a": "http://adapter-a.default.svc.cluster.local"},
 	})
 
 	mockDao := newMockResourceDao()
@@ -3019,7 +3019,7 @@ func TestResourceService_Create_SeedsConditionsForRequiredAdapters(t *testing.T)
 	registry.Register(registry.EntityDescriptor{
 		Kind:             "ManagedCluster",
 		Plural:           "managedclusters",
-		RequiredAdapters: []string{"provisioner"},
+		RequiredAdapters: map[string]string{"provisioner": "http://provisioner.default.svc.cluster.local"},
 	})
 
 	mockDao := newMockResourceDao()
@@ -3084,7 +3084,7 @@ func TestProcessAdapterStatus_FinalizedTrue_RecomputesConditions_WhenHardDeleteB
 	registry.Register(registry.EntityDescriptor{
 		Kind:             "Parent",
 		Plural:           "parents",
-		RequiredAdapters: []string{"adapter1"},
+		RequiredAdapters: map[string]string{"adapter1": "http://adapter1.default.svc.cluster.local"},
 	})
 	registry.Register(registry.EntityDescriptor{
 		Kind:           "Child",

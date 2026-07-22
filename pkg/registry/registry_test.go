@@ -372,7 +372,7 @@ func TestLoadDescriptors_AllFields(t *testing.T) {
 			Kind:             "Cluster",
 			Plural:           "clusters",
 			SpecSchemaName:   "ClusterSpec",
-			RequiredAdapters: []string{"provisioner"},
+			RequiredAdapters: map[string]string{"provisioner": "http://provisioner.default.svc.cluster.local"},
 		},
 		{
 			Kind:             "NodePool",
@@ -380,20 +380,22 @@ func TestLoadDescriptors_AllFields(t *testing.T) {
 			ParentKind:       "Cluster",
 			OnParentDelete:   OnParentDeleteCascade,
 			SpecSchemaName:   "NodePoolSpec",
-			RequiredAdapters: []string{"provisioner", "lifecycle"},
+			RequiredAdapters: map[string]string{"provisioner": "http://provisioner.default.svc.cluster.local", "lifecycle": "http://lifecycle.default.svc.cluster.local"},
 		},
 	})
 
 	cluster := MustGet("Cluster")
 	Expect(cluster.SpecSchemaName).To(Equal("ClusterSpec"))
-	Expect(cluster.RequiredAdapters).To(ConsistOf("provisioner"))
+	Expect(cluster.RequiredAdapters).To(HaveKey("provisioner"))
 	Expect(cluster.ParentKind).To(BeEmpty())
 
 	np := MustGet("NodePool")
 	Expect(np.ParentKind).To(Equal("Cluster"))
 	Expect(np.OnParentDelete).To(Equal(OnParentDeleteCascade))
 	Expect(np.SpecSchemaName).To(Equal("NodePoolSpec"))
-	Expect(np.RequiredAdapters).To(ConsistOf("provisioner", "lifecycle"))
+	Expect(np.RequiredAdapters).To(HaveLen(2))
+	Expect(np.RequiredAdapters).To(HaveKey("provisioner"))
+	Expect(np.RequiredAdapters).To(HaveKey("lifecycle"))
 }
 
 func TestValidate_ReferenceTargetKindUnregistered_Panics(t *testing.T) {

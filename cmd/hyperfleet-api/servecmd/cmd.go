@@ -19,6 +19,7 @@ import (
 	"github.com/openshift-hyperfleet/hyperfleet-api/pkg/health"
 	"github.com/openshift-hyperfleet/hyperfleet-api/pkg/logger"
 	"github.com/openshift-hyperfleet/hyperfleet-api/pkg/metrics"
+	"github.com/openshift-hyperfleet/hyperfleet-api/pkg/reconciler"
 	"github.com/openshift-hyperfleet/hyperfleet-api/pkg/registry"
 	"github.com/openshift-hyperfleet/hyperfleet-api/pkg/telemetry"
 )
@@ -154,6 +155,18 @@ func runServe(cmd *cobra.Command, args []string) {
 
 	healthServer := server.NewHealthServer()
 	go healthServer.Start()
+
+	// Start background reconciler (replaces hyperfleet-sentinel + broker)
+	reconcilerCtx, reconcilerCancel := context.WithCancel(ctx)
+	defer reconcilerCancel()
+	reconcilerCfg := cfg.Reconciler
+	if reconcilerCfg == nil {
+		reconcilerCfg = config.NewReconcilerConfig()
+	}
+	if sf := environments.Environment().Database.SessionFactory; sf != nil {
+		r := reconciler.New(reconcilerCfg, sf)
+		go r.Start(reconcilerCtx)
+	}
 
 	// Wait for health server to be listening before marking as ready
 	if notifier, ok := healthServer.(server.ListenNotifier); ok {

@@ -791,7 +791,12 @@ func loadDefaultTestEntities() {
 			NameMinLen:        3,
 			NameMaxLen:        53,
 			RequireSpecSchema: true,
-			RequiredAdapters:  []string{"validation", "dns", "pullsecret", "hypershift"},
+			RequiredAdapters: map[string]string{
+				"validation": "http://hyperfleet-adapter-validation.hyperfleet.svc.cluster.local",
+				"dns":        "http://hyperfleet-adapter-dns.hyperfleet.svc.cluster.local",
+				"pullsecret": "http://hyperfleet-adapter-pullsecret.hyperfleet.svc.cluster.local",
+				"hypershift": "http://hyperfleet-adapter-hypershift.hyperfleet.svc.cluster.local",
+			},
 		},
 		{
 			Kind:              "NodePool",
@@ -802,7 +807,10 @@ func loadDefaultTestEntities() {
 			NameMinLen:        3,
 			NameMaxLen:        15,
 			RequireSpecSchema: true,
-			RequiredAdapters:  []string{"validation", "hypershift"},
+			RequiredAdapters: map[string]string{
+				"validation": "http://hyperfleet-adapter-validation.hyperfleet.svc.cluster.local",
+				"hypershift": "http://hyperfleet-adapter-hypershift.hyperfleet.svc.cluster.local",
+			},
 		},
 		{
 			Kind:           "Channel",

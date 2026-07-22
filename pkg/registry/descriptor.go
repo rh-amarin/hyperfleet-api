@@ -8,6 +8,19 @@ const (
 	OnParentDeleteCascade  OnParentDeletePolicy = "cascade"
 )
 
+// RequiredAdapterNames returns the adapter names (map keys) in a stable sorted slice,
+// suitable for aggregation logic that only needs names, not URLs.
+func (e *EntityDescriptor) RequiredAdapterNames() []string {
+	if len(e.RequiredAdapters) == 0 {
+		return nil
+	}
+	names := make([]string, 0, len(e.RequiredAdapters))
+	for name := range e.RequiredAdapters {
+		names = append(names, name)
+	}
+	return names
+}
+
 // ReferenceDescriptor declares a non-ownership association from one entity type to another.
 // See HYPERFLEET-1156 for the full resource references implementation.
 type ReferenceDescriptor struct {
@@ -34,8 +47,8 @@ type EntityDescriptor struct {
 	SpecSchemaName string `mapstructure:"spec_schema_name" json:"spec_schema_name,omitempty"`
 	// only meaningful when ParentKind != ""
 	OnParentDelete OnParentDeletePolicy `mapstructure:"on_parent_delete" json:"on_parent_delete,omitempty"`
-	// adapters that must finalize before hard-delete
-	RequiredAdapters []string `mapstructure:"required_adapters" json:"required_adapters,omitempty"`
+	// adapters that must finalize before hard-delete; maps adapter name to k8s service URL
+	RequiredAdapters map[string]string `mapstructure:"required_adapters" json:"required_adapters,omitempty"`
 	// non-ownership associations to other entity types (HYPERFLEET-1156)
 	References []ReferenceDescriptor `mapstructure:"references" json:"references,omitempty"`
 	// panic at startup if SpecSchemaName missing from spec
