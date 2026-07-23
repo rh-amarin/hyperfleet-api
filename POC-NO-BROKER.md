@@ -38,7 +38,7 @@ Specific goals:
                               │
   ┌───────────────────────────▼────────────────────────────────────┐
   │                    hyperfleet-sentinel                         │
-  │  polls DB for new/updated resources                            │
+  │  polls API for new/updated resources                           │
   │  publishes event to broker topic                               │
   └───────────────────────────┬────────────────────────────────────┘
                               │ publish
@@ -66,6 +66,7 @@ Specific goals:
 ```
 
 **Data flow for a CREATE:**
+
 1. Client POSTs to `/clusters` → API writes to DB
 2. Sentinel polls DB, detects new record, publishes event to broker topic
 3. Each adapter consumes from its dedicated subscription queue
@@ -73,6 +74,7 @@ Specific goals:
 5. API aggregates adapter statuses, sets `Reconciled=True` when all required adapters report success
 
 **Required adapters config (entity descriptor):**
+
 ```yaml
 required_adapters:
   - cl-namespace
@@ -111,6 +113,7 @@ required_adapters:
 ```
 
 **Data flow for a CREATE:**
+
 1. Client POSTs to `/clusters` → API writes to DB
 2. Reconciler goroutine (inside API) picks up unreconciled resource on next poll cycle
 3. API POSTs reconcile payload directly to each adapter's `/reconcile` endpoint in parallel
@@ -118,6 +121,7 @@ required_adapters:
 5. API aggregates adapter statuses, sets `Reconciled=True` when all required adapters report success
 
 **Required adapters config (entity descriptor):**
+
 ```yaml
 required_adapters:
   cl-namespace:  "http://cl-namespace.hyperfleet.svc.cluster.local:8082"
@@ -210,7 +214,7 @@ Key variables (all have defaults in `env.kind`):
 | `NAMESPACE` | `hyperfleet-local` | Kubernetes namespace |
 | `API_IMAGE_TAG` | `local` | Tag for the locally built API image |
 | `ADAPTER_IMAGE_TAG` | `local` | Tag for the locally built adapter image |
-| `RECONCILER_POLL_INTERVAL` | `30s` | How often the reconciler polls the DB |
+| `RECONCILER_POLL_INTERVAL` | `5s` | How often the reconciler polls the DB |
 | `RECONCILER_STALE_THRESHOLD` | `30m` | Age at which a resource is considered stale |
 | `RECONCILER_HTTP_TIMEOUT` | `5s` | Timeout for adapter HTTP calls |
 
@@ -278,6 +282,7 @@ HELMFILE_ENV=kind make local-down-kind
 ### hyperfleet-api
 
 **What changed:**
+
 - Added a **background reconciler goroutine** that starts at API boot time and runs until shutdown.
 - The reconciler polls the database on a configurable interval (`poll_interval`, default `30s`) for resources that are stale (last reconciliation older than `stale_threshold`, default `30m`) or have never been reconciled.
 - For each stale resource, the reconciler POSTs a plain JSON reconcile payload to every adapter URL listed in the entity's `required_adapters` map, concurrently.
@@ -286,6 +291,7 @@ HELMFILE_ENV=kind make local-down-kind
 - `required_adapters` in entity descriptors changed from `[]string` → `map[string]string` (name → URL).
 
 **New Helm values:**
+
 ```yaml
 reconciler:
   enabled: true
@@ -295,6 +301,7 @@ reconciler:
 ```
 
 **Removed:**
+
 - All broker client configuration (`broker.type`, `broker.googlepubsub.*`, `broker.rabbitmq.*`)
 
 ---
@@ -302,11 +309,13 @@ reconciler:
 ### hyperfleet-adapter
 
 **What changed:**
+
 - Exposed a new **`POST /reconcile`** HTTP endpoint on port `8082`.
 - The adapter now acts as an HTTP server waiting for push from the API, instead of a subscriber pulling from a broker queue.
 - Removed all broker client code (Pub/Sub subscriber, RabbitMQ consumer, subscription lifecycle management).
 
 **Removed:**
+
 - All broker configuration (`broker.type`, `googlepubsub.*`, `rabbitmq.*`)
 - Broker Helm values (`broker.type`, `broker.googlepubsub.*`, `broker.rabbitmq.*`)
 
@@ -334,10 +343,12 @@ The sentinel's only job was to detect DB changes and publish events to the broke
 
 - **`helmfile/values/base-api.yaml.gotmpl`**:
   - Changed `required_adapters` rendering from a list to a map (name→URL):
+
     ```gotmpl
     required_adapters:
       {{ .name }}: "http://{{ .name }}.{{ $.Values.namespace }}.svc.cluster.local:8082"
     ```
+
   - Added reconciler config section with env var overrides
 
 - **`helmfile/values/base-adapter.yaml.gotmpl`**: Removed entire `broker:` stanza

@@ -440,9 +440,9 @@
                 "description": "OpenAPI component name for spec field validation (e.g. ChannelSpec)"
               },
               "required_adapters": {
-                "type": "array",
-                "items": { "type": "string" },
-                "description": "Adapters that must finalize before hard-delete"
+                "type": "object",
+                "additionalProperties": { "type": "string" },
+                "description": "Adapters that must finalize before hard-delete (name -> URL)"
               },
               "name_min_len": {
                 "type": "integer",

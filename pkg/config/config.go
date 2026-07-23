@@ -22,7 +22,7 @@ type ReconcilerConfig struct {
 func NewReconcilerConfig() *ReconcilerConfig {
 	return &ReconcilerConfig{
 		Enabled:        true,
-		PollInterval:   30 * time.Second,
+		PollInterval:   5 * time.Second,
 		StaleThreshold: 30 * time.Minute,
 		HTTPTimeout:    5 * time.Second,
 	}
