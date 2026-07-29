@@ -1,11 +1,9 @@
 package reconciler
 
 import (
-	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
-	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/openshift-hyperfleet/hyperfleet-api/pkg/api"
@@ -16,7 +14,6 @@ import (
 	"github.com/openshift-hyperfleet/hyperfleet-api/pkg/registry"
 )
 
-// eventData is the payload POSTed to each adapter's /reconcile endpoint.
 type eventData struct {
 	ID              string          `json:"id"`
 	Kind            string          `json:"kind"`
@@ -31,22 +28,20 @@ type ownerReference struct {
 	Href string `json:"href"`
 }
 
-// Reconciler polls the database and fires HTTP requests to adapters when resources need reconciliation.
 type Reconciler struct {
 	cfg            *config.ReconcilerConfig
 	sessionFactory db.SessionFactory
-	httpClient     *http.Client
+	directDB       *sql.DB
 }
 
 func New(cfg *config.ReconcilerConfig, sessionFactory db.SessionFactory) *Reconciler {
 	return &Reconciler{
 		cfg:            cfg,
 		sessionFactory: sessionFactory,
-		httpClient:     &http.Client{Timeout: cfg.HTTPTimeout},
+		directDB:       sessionFactory.DirectDB(),
 	}
 }
 
-// Start runs the reconcile loop until ctx is cancelled. Intended to run in a goroutine.
 func (r *Reconciler) Start(ctx context.Context) {
 	if !r.cfg.Enabled {
 		logger.Info(ctx, "reconciler disabled, skipping")
@@ -56,7 +51,7 @@ func (r *Reconciler) Start(ctx context.Context) {
 	logger.With(ctx,
 		"poll_interval", r.cfg.PollInterval,
 		"stale_threshold", r.cfg.StaleThreshold,
-	).Info("reconciler starting")
+	).Info("reconciler starting (db-queue mode)")
 
 	ticker := time.NewTicker(r.cfg.PollInterval)
 	defer ticker.Stop()
@@ -75,26 +70,40 @@ func (r *Reconciler) Start(ctx context.Context) {
 func (r *Reconciler) tick(ctx context.Context) {
 	resourceDao := dao.NewResourceDao(r.sessionFactory)
 
+	notified := false
 	for _, desc := range registry.All() {
 		if len(desc.RequiredAdapters) == 0 {
 			continue
 		}
-		r.reconcileKind(ctx, resourceDao, desc)
+		if r.reconcileKind(ctx, resourceDao, desc) {
+			notified = true
+		}
+	}
+
+	if notified {
+		if _, err := r.directDB.ExecContext(ctx, "SELECT pg_notify('messages', '')"); err != nil {
+			logger.WithError(ctx, err).Warn("reconciler: pg_notify failed")
+		}
 	}
 }
 
-func (r *Reconciler) reconcileKind(ctx context.Context, resourceDao dao.ResourceDao, desc registry.EntityDescriptor) {
+func (r *Reconciler) reconcileKind(ctx context.Context, resourceDao dao.ResourceDao, desc registry.EntityDescriptor) bool {
 	resources, err := resourceDao.FindByKind(ctx, desc.Kind)
 	if err != nil {
 		logger.With(ctx, "kind", desc.Kind).WithError(err).Error("reconciler: failed to list resources")
-		return
+		return false
 	}
 
+	enqueued := false
+	adapterNames := desc.RequiredAdapterNames()
 	for _, resource := range resources {
 		if r.needsReconciliation(resource) {
-			r.triggerAdapters(ctx, resource, desc.RequiredAdapters)
+			if r.enqueueMessages(ctx, resource, adapterNames) {
+				enqueued = true
+			}
 		}
 	}
+	return enqueued
 }
 
 func (r *Reconciler) needsReconciliation(resource *api.Resource) bool {
@@ -103,46 +112,40 @@ func (r *Reconciler) needsReconciliation(resource *api.Resource) bool {
 			if cond.Status == api.ConditionFalse {
 				return true
 			}
-			// Reconciled=True but stale — re-trigger
 			if time.Since(cond.LastUpdatedTime) > r.cfg.StaleThreshold {
 				return true
 			}
 			return false
 		}
 	}
-	// No Reconciled condition present — treat as needing reconciliation
 	return true
 }
 
-func (r *Reconciler) triggerAdapters(ctx context.Context, resource *api.Resource, adapters map[string]string) {
+func (r *Reconciler) enqueueMessages(ctx context.Context, resource *api.Resource, adapterNames []string) bool {
 	payload, err := buildPayload(resource)
 	if err != nil {
 		logger.With(ctx, "resource_id", resource.ID).WithError(err).Error("reconciler: failed to build payload")
-		return
+		return false
 	}
 
-	for name, url := range adapters {
-		go r.postToAdapter(ctx, name, url, payload)
+	enqueued := false
+	for _, name := range adapterNames {
+		result, err := r.directDB.ExecContext(ctx,
+			`INSERT INTO messages (adapter_name, kind, resource_id, payload)
+			 VALUES ($1, $2, $3, $4)
+			 ON CONFLICT DO NOTHING`,
+			name, resource.Kind, resource.ID, payload,
+		)
+		if err != nil {
+			logger.With(ctx, "adapter", name, "resource_id", resource.ID).WithError(err).Warn("reconciler: failed to enqueue message")
+			continue
+		}
+		if rows, _ := result.RowsAffected(); rows > 0 {
+			enqueued = true
+			logger.With(ctx, "adapter", name, "resource_id", resource.ID).Debug("reconciler: message enqueued")
+		}
 	}
-}
-
-func (r *Reconciler) postToAdapter(ctx context.Context, name, url string, payload []byte) {
-	endpoint := fmt.Sprintf("%s/reconcile", url)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(payload))
-	if err != nil {
-		logger.With(ctx, "adapter", name, "url", endpoint).WithError(err).Error("reconciler: failed to build request")
-		return
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := r.httpClient.Do(req)
-	if err != nil {
-		logger.With(ctx, "adapter", name, "url", endpoint).WithError(err).Warn("reconciler: adapter call failed")
-		return
-	}
-	defer resp.Body.Close() //nolint:errcheck
-
-	logger.With(ctx, "adapter", name, "status", resp.StatusCode).Info("reconciler: adapter notified")
+	return enqueued
 }
 
 func buildPayload(resource *api.Resource) ([]byte, error) {

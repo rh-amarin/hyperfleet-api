@@ -203,8 +203,6 @@ config:
     poll_interval: 30s
     # -- Maximum time since last successful reconciliation before re-triggering adapters.
     stale_threshold: 30m
-    # -- Per-adapter HTTP POST timeout.
-    http_timeout: 5s
 
   # -- Entity descriptors registered at startup. Each entry auto-generates
   # REST endpoints, spec validation, and delete policies.

@@ -6,7 +6,7 @@ import (
 	"github.com/openshift-hyperfleet/hyperfleet-api/pkg/registry"
 )
 
-// ReconcilerConfig controls the background reconciler that replaces hyperfleet-sentinel.
+// ReconcilerConfig controls the background reconciler that enqueues messages for adapters.
 type ReconcilerConfig struct {
 	// Enabled turns the reconciler on or off (default: true).
 	Enabled bool `mapstructure:"enabled" json:"enabled"`
@@ -15,8 +15,6 @@ type ReconcilerConfig struct {
 	// StaleThreshold is the maximum time a resource can go without a successful
 	// reconciliation before the reconciler re-triggers adapters (default: 30m).
 	StaleThreshold time.Duration `mapstructure:"stale_threshold" json:"stale_threshold"`
-	// HTTPTimeout is the per-adapter POST deadline (default: 5s).
-	HTTPTimeout time.Duration `mapstructure:"http_timeout" json:"http_timeout"`
 }
 
 func NewReconcilerConfig() *ReconcilerConfig {
@@ -24,7 +22,6 @@ func NewReconcilerConfig() *ReconcilerConfig {
 		Enabled:        true,
 		PollInterval:   5 * time.Second,
 		StaleThreshold: 30 * time.Minute,
-		HTTPTimeout:    5 * time.Second,
 	}
 }
 
